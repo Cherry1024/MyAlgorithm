@@ -270,5 +270,169 @@ class Solution {
 }
 ```
 
+### 总结
+
+#### 从中序与后序遍历序列构造二叉树
+
+##### 树的还原过程
+
+1. 根据后序数组（最后一位）获得根节点
+
+2. 根据根节点的值找到中序数组的索引      ***！！！！HashMap存放！！！！*** 
+
+3. 根据索引可以将中序数组分为左子树和右子树   int index
+
+4. 根据索引确定左子树和右子树在中序(inorderStart, inorderEnd)和后序(postorderStart, int postorderEnd)数组中的左右边界位置
+
+5. 递归构造左子树和右子树
+
+6. 返回根节点结束
+
+   <img src="https://i.loli.net/2020/08/17/d3UbLCR7vxAJikV.png" alt="image-20200817150844936" style="zoom: 80%;" />
+
+```java
+class Solution {
+    //将节点的值和索引存在HashMap里面
+    //！！！！看题解学到的！之前自己还想着每次找都遍历一遍，还是太年轻了
+    HashMap<Integer, Integer> inorderMap = new HashMap<>();
+    int[] post;
+    public TreeNode buildTree(int[] inorder, int[] postorder) {
+        for(int i=0; i<inorder.length;i++){            
+            inorderMap.put(inorder[i],i); 
+        }
+        post=postorder;
+        TreeNode node=buildTree(0, inorder.length-1, 0, postorder.length-1);
+        return node;
+    }
+    public TreeNode buildTree(int inorderStart, int inorderEnd, int postorderStart, int postorderEnd){
+        if(inorderStart>inorderEnd || postorderEnd<postorderStart) return null;
+        int root=post[postorderEnd];
+        int index=inorderMap.get(root);
+        TreeNode node = new TreeNode(root);
+        node.left=buildTree(inorderStart,index-1,postorderStart,postorderStart+index-inorderStart-1);
+        node.right=buildTree(index+1,inorderEnd,postorderStart+index-inorderStart,postorderEnd-1);
+        return node;
+    }
+}
+```
+
+#### 填充每个节点的下一个右侧节点指针
+
+**leetcode[116](https://leetcode-cn.com/problems/populating-next-right-pointers-in-each-node/)**
+
+📕 重点：常数空间。 所以：排除用队列BFS的思路。用了队列就是N的空间复杂度。
+
+📕 要抓住关键：每个 node 左子树的 next , 就是 node 的右子树；每个 node 右子树的 next, 就是 node next 的 左子树
+
+```java
+class Solution {
+    public Node connect(Node root) {
+        dfs(root, null);
+        return root;
+    }
+    public void dfs(Node root, Node next){
+        if(root!=null) {
+            root.next=next;
+            dfs(root.left, root.right);
+            if(root.next==null) dfs(root.right,null);
+            else dfs(root.right, root.next.left);
+        }
+    }
+}
+```
+
+#### !!!填充每个节点的下一个右侧节点指针 
+
+📕📕📕**leetcode[117](https://leetcode-cn.com/problems/populating-next-right-pointers-in-each-node-ii/)**   这道题要好好理解！！琢磨了我一下午，思路其实并不难，但在实现上有很多细节我考虑不到，尤其是发现自己对于指针、Java对象赋值这一块真的理解不够深入！！！
+
+##### BFS
+
+很容易想到用队列存放每一层的节点，通过`pre`指针把栈里的元素一个一个接起来。但是空间复杂度$O(n)$不满足题目要求：`You may only use constant extra space.`
+
+```java
+public Node connect(Node root) {
+    if (root == null) {
+        return root;
+    }
+    Queue<Node> queue = new LinkedList<Node>();
+    queue.offer(root);
+    while (!queue.isEmpty()) {
+        int size = queue.size();
+        Node pre = null;
+        for (int i = 0; i < size; i++) {
+            Node cur = queue.poll();
+            if (i > 0) {
+                pre.next = cur;
+            }
+            pre = cur;
+            if (cur.left != null) {
+                queue.offer(cur.left);
+            }
+            if (cur.right != null) {
+                queue.offer(cur.right);
+            }
+
+        }
+    }
+    return root;
+}
+```
+
+##### BFS的改进——dummy指针
+
+利用BFS的思想，我们利用 `pre`指针，然后一个一个取节点，把它连起来。解法一为什么没有像解法二那样考虑当前节点为`null`呢？因为我们没有添加为`null`的节点，就是下边的代码的作用。
+
+```java
+if (cur.left != null) {
+    queue.offer(cur.left);
+}
+if (cur.right != null) {
+    queue.offer(cur.right);
+}
+```
+
+所以这里是一样的，如果当前节点为`null`不处理就可以了。
+
+第二个问题，怎么得到每次的开头的节点呢？我们用一个`dummy`指针，当连接第一个节点的时候，就将`dummy`指针指向他。此外，之前用的`pre`指针，把它当成`tail`指针可能会更好理解。如下图所示：
+
+<img src="https://i.loli.net/2020/08/18/cBHWCYgAjn4DvsR.png" alt="image-20200818213439848" style="zoom:67%;" />
+
+`cur`指针利用`next`不停的遍历当前层。
+
+如果 `cur` 的孩子不为`null`就将它接到 `tail` 后边，然后更新`tail`。
+
+当 `cur` 为 `null` 的时候，再利用 `dummy` 指针得到新的一层的开始节点。
+
+`dummy` 指针在链表中经常用到，他只是为了处理头结点的情况，它并不属于当前链表。
+
+代码实现如下：
+
+```java
+class Solution {
+    public Node connect(Node root) {
+        Node cur = root;
+        //遍历每一层
+        while(cur!=null){
+            Node dummpy = new Node();
+            Node tail = dummpy;
+            //cur层的遍历
+            while(cur!=null){
+                if(cur.left!=null){
+                    tail.next=cur.left;
+                    tail=tail.next;
+                }
+                if(cur.right!=null){
+                    tail.next=cur.right;
+                    tail=tail.next;
+                }
+                cur=cur.next;  //继续cur层右边的节点
+            }
+            cur=dummpy.next;  //下一层
+        }
+        return root;
+    }
+}
+```
+
 
 
