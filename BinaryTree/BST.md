@@ -434,5 +434,42 @@ class Solution {
 }
 ```
 
+#### 二叉树的最近公共祖先
 
+一开始做这题想当然的想到层次遍历
 
+当我们用递归去做这个题时不要被题目误导，应该要明确一点
+这个函数的功能有三个：给定两个节点 p 和 q
+
+- 如果 p 和 q 都存在，则返回它们的公共祖先；
+
+- 如果只存在一个，则返回存在的一个；
+
+- 如果 p 和 q 都不存在，则返回NULL
+
+  本题说给定的两个节点都存在，那自然还是能用上面的函数来解决
+
+**具体思路：**
+（1） 如果当前结点 $root$ 等于 NULL，则直接返回 NULL
+（2） 如果 $root$ 等于 p 或者 q ，那这棵树一定返回 p 或者 q
+（3） 然后递归左右子树，因为是递归，使用函数后可认为左右子树已经算出结果，用 left 和 right 表示
+（4） 此时若left为空，那最终结果只要看right；若right 为空，那最终结果只要看 left
+（5） 如果 left和 right 都非空，因为只给了 p 和 q 两个结点，都非空，说明一边一个，因此 $root$ 是他们的最近公共祖先
+（6） 如果 left 和 right 都为空，则返回空（其实已经包含在前面的情况中了）
+
+时间复杂度是 $O(n)$：每个结点最多遍历一次或用主定理，空间复杂度是 $O(n)$：需要系统栈空间
+
+```java
+class Solution {
+    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {
+        if(root == null || root == p || root == q) return root;
+        TreeNode left = lowestCommonAncestor(root.left, p, q);
+        TreeNode right = lowestCommonAncestor(root.right, p, q);
+        if(left == null) return right;
+        if(right == null) return left;
+        return root;
+    }
+}
+```
+
+>这样理解可能更加清楚一点： lowestCommonAncestor这个函数不要理解为找公共祖先，而就理解为帮两个节点找祖先 传入的值是root, p, q，帮p和q找到一个祖先就行，找到两个就更好了，如果找不到就返回NULL 在root->left里面找一次，root->right里面再找一次，如果某一边返回值是NULL， 那么说明两个值都在另一边 由于找的时候，一定是找的最近的祖先返回，所以这里直接返回前面的返回值就行了，可以保证是最近的公共祖先 如果左右的返回值都不是NULL，那说明p和q分别在两边，则当前节点就是最近公共祖先 左右都找不到就直接返回NULL
