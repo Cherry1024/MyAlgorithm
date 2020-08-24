@@ -434,12 +434,13 @@ class Solution {
 }
 ```
 
-#### 二叉树的最近公共祖先
+#### 二叉树的最近公共祖先_leetcode236
 
-一开始做这题想当然的想到层次遍历
+一开始做这题想当然的想到层次遍历，然后链表相交求第一个交点的算法。但实际上有的情况逻辑是错误的，可以画图推导一下。
 
-当我们用递归去做这个题时不要被题目误导，应该要明确一点
-这个函数的功能有三个：给定两个节点 p 和 q
+当我们用递归去做这个题时不要被题目误导，应该要明确一点——这个函数的功能有三个：
+
+给定两个节点 p 和 q
 
 - 如果 p 和 q 都存在，则返回它们的公共祖先；
 
@@ -473,3 +474,139 @@ class Solution {
 ```
 
 >这样理解可能更加清楚一点： lowestCommonAncestor这个函数不要理解为找公共祖先，而就理解为帮两个节点找祖先 传入的值是root, p, q，帮p和q找到一个祖先就行，找到两个就更好了，如果找不到就返回NULL 在root->left里面找一次，root->right里面再找一次，如果某一边返回值是NULL， 那么说明两个值都在另一边 由于找的时候，一定是找的最近的祖先返回，所以这里直接返回前面的返回值就行了，可以保证是最近的公共祖先 如果左右的返回值都不是NULL，那说明p和q分别在两边，则当前节点就是最近公共祖先 左右都找不到就直接返回NULL
+
+#### 二叉树的序列化与反序列化_leetcode297
+
+实现一个类如下，这两个方法成对使用，只要能保证自洽即可。
+
+```java
+public class Codex{
+    //把一颗二叉树序列化成字符串——>二叉树的遍历（递归：前中后序遍历，迭代：层次遍历）
+    public String serialize(TreeNode root){}
+    //把字符串反序列化成二叉树
+    public TreeNode deserialize(String data){}
+}
+```
+
+##### 前序遍历(后序遍历)
+
+```java
+String SEP=",";
+String NULL="#";
+public class Codex{
+    public String serialize(TreeNode root){
+        StringBuilder str = new StringBuilder();
+        serialize(root, str);
+        return str.toString();
+    }
+    public void serialize(TreeNode root, StringBuilder str){
+        if(root==null) {
+            str.append(NULL).append(SEP);
+            return;
+        }
+        /****** 前序遍历位置 ******/
+        str.append(root.val).append(SEP);
+        /***********************/
+        
+        serialize(root.left, str);
+        serialize(root.rigtht, str);
+        
+        /****** 后序遍历位置 ******/
+        /***********************/
+    }
+    
+    public TreeNode deserialize(String data){
+        LinkedList<String> list = new LinkedList<>();
+        for(String s: data.spilt(SEP)){
+            list.addLast(s);
+        }
+        return deserialize(list);
+    }
+    //list列表第一个元素就是一棵树的根节点
+    //因此只要将列表的第一个元素取出作为根节点，剩下交给递归解决即可
+    public TreeNode deserialize(LinkedList<String> list){
+        if(list.isEmpty()) return null;
+        
+        /****** 前序遍历位置 ******/
+    	// 列表最左侧就是根节点
+        String first=list.removeFirst();
+        if(first.equals(null)) return null;
+        TreeNode root = new TreeNode(Integer.parseInt(first));
+        /***********************/
+        
+        root.left=deserialize(list);
+        root.right=deserialize(list);
+        return root;
+    }
+}
+```
+
+📕 **注意：**后序遍历反序列化，应该先构造右子树，再构造左子树，做题的时候可以先自己画图看看
+
+```java 
+public TreeNode deserialize(LinkedList<String> nodes){
+    if (nodes.isEmpty()) return null;
+        // 从后往前取出元素
+        String last = nodes.removeLast();
+        if (last.equals(NULL)) return null;
+        TreeNode root = new TreeNode(Integer.parseInt(last));
+        // 先构造右子树，后构造左子树
+        root.right = deserialize(nodes);
+        root.left = deserialize(nodes);
+
+        return root;
+}
+```
+
+##### 中序遍历，无法实现反序列化，所以行不通
+
+##### 层级遍历
+
+```java
+public String serialize(TreeNode root){
+    if(root==null) return "";
+    StringBuilder str=new StringBuilder();
+    Queue<TreeNode> queue=new LinkedList<>();
+    queue.offer(root);
+    while(!queue.isEmpty()){
+        TreeNode cur=queue.poll();
+        //反序列化要记录空指针
+        //因此对空指针的检验从【将元素加入队列】时改成【从队列取出元素】时
+        if(cur==null) str.append(NULL).append(SEP);
+        str.append(cur.val).append(SEP);
+        queue.add(cur.left);
+        queue.add(cur.right);
+    }
+    return str.toString();
+}
+```
+
+```java
+public TreeNode deserialize(String data){
+    if (data.isEmpty()) return null;
+    String[] nodes = data.spilt(SEP);
+    TreeNode root=new TreeNode(Integer.parseInt(nodes[0]));
+    Queue<TreeNode> queue = new Queue<>();
+    queue.add(root);
+    for(int i=0; i<nodes.length;){
+        TreeNode cur=queque.poll();
+        String left=nodes[i++];
+        if(!left.equals(NULL)){
+            cur.left=new TreeNode(Integer.parseInt(left));
+            q.offer(cur.left);
+        }else{
+            cur.left=null;
+        }
+        String right=nodes[i++];
+        if(!right.equals(NULL)){
+            cur.right=new TreeNode(Integer.parseInt(right));
+            q.offer(cur.right);
+        }else{
+            cur.right=null;
+        }
+    }
+    return root;
+}
+
+```
+
