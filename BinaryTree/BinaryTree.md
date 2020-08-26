@@ -610,3 +610,35 @@ public TreeNode deserialize(String data){
 
 ```
 
+#### [面试题 17.12. BiNode LCCI](https://leetcode-cn.com/problems/binode-lcci/)
+
+> 二叉搜索树转换成单链表的形式——左子树为空、右子树为下一节点
+
+二叉树的中序遍历问题
+
+##### 非遍历
+
+利用前驱节点prev，记录上一个被处理的节点，当前节点被遍历到时，将node.left置空，prev.right指向当前节点node,prev指针后移到当前节点node在，最后node进入右子树。
+
+```java
+public TreeNode convertBiNode(TreeNode root) {
+    Stack<TreeNode> stack = new Stack<>();
+    TreeNode prev = new TreeNode(0); //前驱节点
+    TreeNode head = prev;
+    TreeNode node = root; 
+    stack.push(root);
+    while(!stack.isEmpty()){
+        TreeNode cur=stack.pop();
+        if(cur!=null){
+            if(cur.right!=null) stack.push(cur.right);
+            stack.push(cur);
+            stack.push(null);
+            if(cur.left!=null) stack.push(cur.left);            
+        }
+        else{
+            
+        }
+    }
+}
+```
+
